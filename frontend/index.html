@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MintOS</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --font-scale: 1.2;
+    --sidebar-bg: #0f1117;
+    --sidebar-w: 220px;
+    --accent: #f97316;
+    --accent-hover: #ea6c0a;
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2a2d3d;
+    --text: #e2e8f0;
+    --text-muted: #6b7280;
+    --text-dim: #9ca3af;
+    --green: #10b981;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --blue: #3b82f6;
+    --purple: #8b5cf6;
+    --hover-bg: rgba(255,255,255,0.04);
+    --row-hover-bg: rgba(255,255,255,0.02);
+    --modal-overlay: rgba(0,0,0,0.6);
+    --shadow-lg: rgba(0,0,0,0.4);
+    --scrollbar-hover: #3a3d50;
+  }
+
+  [data-theme="light"] {
+    --sidebar-bg: #f8fafc;
+    --bg: #f1f5f9;
+    --surface: #ffffff;
+    --surface2: #f8fafc;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --text-dim: #475569;
+    --hover-bg: rgba(0,0,0,0.04);
+    --row-hover-bg: rgba(0,0,0,0.02);
+    --modal-overlay: rgba(15,23,42,0.35);
+    --shadow-lg: rgba(15,23,42,0.12);
+    --scrollbar-hover: #cbd5e1;
+  }
+
+  html, body, #root { height: 100%; overflow: hidden; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: calc(14px * var(--font-scale));
+    line-height: 1.5;
+  }
+
+  /* ── Layout ── */
+  .app { display: flex; height: 100vh; overflow: hidden; }
+
+  .sidebar {
+    width: var(--sidebar-w);
+    flex-shrink: 0;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .sidebar-logo {
+    padding: 20px 18px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo-title {
+    font-size: calc(18px * var(--font-scale));
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .sidebar-logo-title span { color: var(--accent); }
+  .sidebar-logo-sub {
+    font-size: calc(10px * var(--font-scale));
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+
+  .nav-section-label {
+    font-size: calc(10px * var(--font-scale));
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 10px 18px 4px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 18px;
+    cursor: pointer;
+    border-radius: 0;
+    color: var(--text-muted);
+    font-size: calc(13.5px * var(--font-scale));
+    font-weight: 500;
+    transition: all 0.15s;
+    border-left: 3px solid transparent;
+  }
+  .nav-item:hover { background: var(--hover-bg); color: var(--text); }
+  .nav-item.active {
+    background: rgba(249,115,22,0.1);
+    color: var(--accent);
+    border-left-color: var(--accent);
+  }
+  .nav-item .nav-icon { font-size: calc(16px * var(--font-scale)); width: 20px; text-align: center; }
+  .nav-item .nav-badge {
+    margin-left: auto;
+    background: var(--accent);
+    color: #fff;
+    font-size: calc(10px * var(--font-scale));
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+  }
+
+  .sidebar-footer {
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text-muted);
+  }
+
+  /* ── Main content — overflow:hidden so modules control their own scroll ── */
+  .main {
+    flex: 1;
+    overflow: hidden; /* FIX: was overflow-y:auto — conflicts with Reddit two-panel */
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  /* ── Page header ── */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    flex-shrink: 0;
+  }
+  .page-title { font-size: calc(18px * var(--font-scale)); font-weight: 700; }
+  .page-subtitle { font-size: calc(12px * var(--font-scale)); color: var(--text-muted); margin-top: 2px; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 7px; border: none;
+    font-size: calc(13px * var(--font-scale)); font-weight: 600; cursor: pointer;
+    transition: all 0.15s; line-height: 1;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--surface2); }
+  .btn-ghost { background: transparent; color: var(--text-muted); }
+  .btn-ghost:hover { background: var(--surface); color: var(--text); }
+  .btn-danger { background: transparent; color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+  .btn-danger:hover { background: rgba(239,68,68,0.1); }
+  .btn-sm { padding: 5px 10px; font-size: calc(12px * var(--font-scale)); }
+  .btn-icon { padding: 6px; border-radius: 6px; }
+
+  /* ── Forms ── */
+  input, select, textarea {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 7px;
+    padding: 8px 12px;
+    font-size: calc(13px * var(--font-scale));
+    font-family: inherit;
+    outline: none;
+    transition: border 0.15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  input::placeholder, textarea::placeholder { color: var(--text-muted); }
+  select option { background: var(--surface2); }
+
+  /* ── Cards / Surfaces ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  /* ── Status badges ── */
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 2px 8px; border-radius: 12px;
+    font-size: calc(11px * var(--font-scale)); font-weight: 600;
+  }
+  .badge-new { background: rgba(59,130,246,0.15); color: var(--blue); }
+  .badge-qualified { background: rgba(139,92,246,0.15); color: var(--purple); }
+  .badge-proposal { background: rgba(245,158,11,0.15); color: var(--yellow); }
+  .badge-won { background: rgba(16,185,129,0.15); color: var(--green); }
+  .badge-lost { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  /* ── Toast ── */
+  .toast-container {
+    position: fixed; bottom: 24px; right: 24px;
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 9999; pointer-events: none;
+  }
+  .toast {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: calc(13px * var(--font-scale));
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    animation: slideIn 0.2s ease;
+    pointer-events: auto;
+  }
+  .toast.success { border-left: 3px solid var(--green); }
+  .toast.error   { border-left: 3px solid var(--red); }
+  .toast.info    { border-left: 3px solid var(--blue); }
+  @keyframes slideIn { from { transform: translateX(20px); opacity:0; } to { transform: translateX(0); opacity:1; } }
+
+  /* ── CRM Module ── */
+  .crm-wrap { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+  .crm-toolbar {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .crm-toolbar .search-box { flex: 1; min-width: 180px; }
+  .view-tabs {
+    display: flex; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 7px; overflow: hidden;
+  }
+  .view-tab {
+    padding: 6px 14px; font-size: calc(12px * var(--font-scale)); font-weight: 600;
+    cursor: pointer; color: var(--text-muted); transition: all 0.15s;
+  }
+  .view-tab.active { background: var(--accent); color: #fff; }
+
+  /* Table */
+  .leads-table { width: 100%; border-collapse: collapse; }
+  .leads-table th {
+    text-align: left; padding: 10px 12px;
+    font-size: calc(11px * var(--font-scale)); font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .leads-table td {
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .leads-table tr:hover td { background: var(--row-hover-bg); }
+  .leads-table .actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
+  .leads-table tr:hover .actions { opacity: 1; }
+
+  /* Kanban */
+  .kanban-wrap { display: flex; gap: 14px; align-items: flex-start; }
+  .kanban-col {
+    flex: 1; min-width: 200px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+  }
+  .kanban-col-header {
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .kanban-col-title { font-weight: 700; font-size: calc(13px * var(--font-scale)); }
+  .kanban-count {
+    background: var(--surface2); color: var(--text-muted);
+    font-size: calc(11px * var(--font-scale)); font-weight: 700; padding: 1px 7px; border-radius: 10px;
+  }
+  .kanban-cards { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .kanban-card {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .kanban-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .kanban-card-name { font-weight: 600; font-size: calc(13px * var(--font-scale)); margin-bottom: 4px; }
+  .kanban-card-company { font-size: calc(11px * var(--font-scale)); color: var(--text-muted); margin-bottom: 8px; }
+  .kanban-card-meta { display: flex; justify-content: space-between; align-items: center; }
+
+  /* Lead modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: var(--modal-overlay);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; padding: 20px;
+  }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; width: 100%; max-width: 560px;
+    max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 20px 60px var(--shadow-lg);
+  }
+  .modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-title { font-size: calc(16px * var(--font-scale)); font-weight: 700; }
+  .modal-body { padding: 20px 24px; }
+  .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: flex-end; gap: 8px;
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .form-label { font-size: calc(12px * var(--font-scale)); font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; }
+
+  /* ── Brain Module ── */
+  .brain-layout { display: flex; height: 100%; overflow: hidden; }
+  .brain-sidebar {
+    width: 220px; flex-shrink: 0; border-right: 1px solid var(--border);
+    overflow-y: auto; padding: 14px 0;
+  }
+  .brain-file-item {
+    padding: 10px 16px; cursor: pointer; font-size: calc(13px * var(--font-scale));
+    color: var(--text-muted); transition: all 0.15s;
+    border-left: 3px solid transparent;
+  }
+  .brain-file-item:hover { background: var(--hover-bg); color: var(--text); }
+  .brain-file-item.active { background: rgba(249,115,22,0.08); color: var(--accent); border-left-color: var(--accent); }
+  .brain-file-name { font-weight: 600; font-size: calc(13px * var(--font-scale)); }
+  .brain-file-desc { font-size: calc(11px * var(--font-scale)); color: var(--text-muted); margin-top: 2px; }
+  .brain-editor-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .brain-editor-toolbar {
+    padding: 12px 18px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .brain-textarea {
+    flex: 1; resize: none; border: none; border-radius: 0;
+    padding: 20px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: calc(13px * var(--font-scale));
+    line-height: 1.7; background: var(--bg); color: var(--text);
+  }
+  .brain-textarea:focus { border: none; outline: none; }
+
+  /* ── Settings Module ── */
+  .settings-wrap { flex: 1; overflow-y: auto; padding: 24px; }
+  .settings-section { margin-bottom: 28px; }
+  .settings-section-title {
+    font-size: calc(13px * var(--font-scale)); font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .settings-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;
+  }
+  .settings-hint { font-size: calc(11px * var(--font-scale)); color: var(--text-muted); margin-top: 4px; }
+
+  /* ── Reddit Module ── */
+  .reddit-module {
+    display: flex; height: 100%; overflow: hidden;
+  }
+
+  /* Left panel — post queue */
+  .reddit-queue {
+    width: 380px; flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .reddit-queue-header {
+    padding: 14px 16px 10px; flex-shrink: 0;
+  }
+  .reddit-scan-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  }
+  .btn-scan {
+    flex: 1; background: var(--accent); color: #fff;
+    border: none; border-radius: 8px; padding: 9px 14px;
+    font-size: calc(13px * var(--font-scale)); font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: background 0.15s;
+  }
+  .btn-scan:hover:not(:disabled) { background: var(--accent-hover); }
+  .btn-scan:disabled { opacity: 0.55; cursor: not-allowed; }
+  .scan-status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green); flex-shrink: 0;
+  }
+  .scan-status-dot.scanning {
+    background: var(--yellow);
+    animation: pulse 1s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  /* Queue tabs */
+  .queue-tabs {
+    display: flex; gap: 2px;
+    background: var(--surface); border-radius: 8px;
+    padding: 3px; margin-bottom: 0;
+  }
+  .queue-tab {
+    flex: 1; padding: 5px 0; text-align: center;
+    font-size: calc(11px * var(--font-scale)); font-weight: 600; color: var(--text-muted);
+    border-radius: 6px; cursor: pointer; transition: all 0.15s;
+  }
+  .queue-tab.active { background: var(--surface2); color: var(--text); }
+
+  /* Post list */
+  .reddit-post-list {
+    flex: 1; overflow-y: auto; padding: 8px;
+  }
+  .reddit-post-card {
+    padding: 12px; border-radius: 8px; cursor: pointer;
+    border: 1px solid transparent;
+    margin-bottom: 4px; transition: all 0.15s;
+  }
+  .reddit-post-card:hover { background: var(--surface); border-color: var(--border); }
+  .reddit-post-card.selected { background: var(--surface); border-color: var(--accent); }
+  .post-card-top {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+    margin-bottom: 4px;
+  }
+  .post-card-title {
+    font-size: calc(13px * var(--font-scale)); font-weight: 600; line-height: 1.4;
+    color: var(--text); flex: 1;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .relevance-pill {
+    flex-shrink: 0; font-size: calc(11px * var(--font-scale)); font-weight: 700;
+    padding: 2px 7px; border-radius: 10px;
+  }
+  .relevance-high { background: rgba(16,185,129,0.15); color: var(--green); }
+  .relevance-mid  { background: rgba(245,158,11,0.15); color: var(--yellow); }
+  .relevance-low  { background: rgba(107,114,128,0.15); color: var(--text-muted); }
+  .post-card-meta {
+    font-size: calc(11px * var(--font-scale)); color: var(--text-muted);
+    display: flex; gap: 6px; align-items: center;
+  }
+  .post-card-sub { font-weight: 600; color: var(--accent); }
+  .post-card-status {
+    margin-left: auto; font-size: calc(10px * var(--font-scale)); font-weight: 700;
+    padding: 1px 6px; border-radius: 8px;
+  }
+  .status-new      { background: rgba(59,130,246,0.15); color: var(--blue); }
+  .status-generated{ background: rgba(139,92,246,0.15); color: var(--purple); }
+  .status-sent     { background: rgba(16,185,129,0.15); color: var(--green); }
+  .status-skipped  { background: rgba(107,114,128,0.15); color: var(--text-muted); }
+
+  /* Right panel — workspace */
+  .reddit-workspace {
+    flex: 1; display: flex; flex-direction: column;
+    overflow: hidden; background: var(--bg);
+  }
+  .workspace-empty {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 10px; color: var(--text-muted);
+  }
+  .workspace-empty-icon { font-size: calc(40px * var(--font-scale)); opacity: 0.3; }
+  .workspace-empty-text { font-size: calc(14px * var(--font-scale)); }
+
+  .workspace-content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+  .post-detail-header { margin-bottom: 18px; }
+  .post-detail-title { font-size: calc(16px * var(--font-scale)); font-weight: 700; margin-bottom: 8px; line-height: 1.4; }
+  .post-detail-meta {
+    display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+    font-size: calc(12px * var(--font-scale)); color: var(--text-muted);
+  }
+  .post-detail-meta a { color: var(--accent); text-decoration: none; }
+  .post-detail-meta a:hover { text-decoration: underline; }
+  .post-body-preview {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px; font-size: calc(13px * var(--font-scale));
+    color: var(--text-dim); line-height: 1.6; margin-bottom: 18px;
+    max-height: 140px; overflow-y: auto;
+  }
+
+  .dm-section { margin-bottom: 18px; }
+  .dm-section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .dm-section-label { font-size: calc(12px * var(--font-scale)); font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+  .dm-textarea {
+    width: 100%; min-height: 140px; resize: vertical;
+    font-size: calc(13px * var(--font-scale)); line-height: 1.6; font-family: inherit;
+    border-radius: 8px;
+  }
+  .dm-reason {
+    font-size: calc(12px * var(--font-scale)); color: var(--text-muted);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 12px; margin-bottom: 14px;
+    font-style: italic;
+  }
+
+  .workspace-actions {
+    flex-shrink: 0; padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg);
+  }
+  .workspace-actions .spacer { flex: 1; }
+
+  .config-warning {
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.25);
+    border-radius: 8px; padding: 10px 14px;
+    font-size: calc(12px * var(--font-scale)); color: var(--yellow);
+    display: flex; align-items: center; gap: 8px;
+    margin: 8px 16px 0;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .config-warning:hover { background: rgba(245,158,11,0.14); }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
+
+  /* ── Misc ── */
+  .empty-state {
+    text-align: center; padding: 60px 20px;
+    color: var(--text-muted); font-size: calc(14px * var(--font-scale));
+  }
+  .empty-state-icon { font-size: calc(36px * var(--font-scale)); margin-bottom: 10px; opacity: 0.4; }
+  .stats-row { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 9px; padding: 14px 18px; flex: 1; min-width: 110px;
+  }
+  .stat-value { font-size: calc(22px * var(--font-scale)); font-weight: 800; }
+  .stat-label { font-size: calc(11px * var(--font-scale)); color: var(--text-muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .import-modal { max-width: 460px; }
+  .file-drop {
+    border: 2px dashed var(--border); border-radius: 10px;
+    padding: 30px; text-align: center; color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s; margin-bottom: 12px;
+  }
+  .file-drop:hover { border-color: var(--accent); color: var(--text); }
+
+  /* ── Auth ── */
+  .auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    padding: 24px;
+  }
+  .auth-card {
+    width: 100%;
+    max-width: 400px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px;
+    box-shadow: 0 20px 60px var(--shadow-lg);
+  }
+  .auth-logo {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .auth-logo-title {
+    font-size: calc(24px * var(--font-scale));
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .auth-logo-title span { color: var(--accent); }
+  .auth-logo-sub {
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .auth-tabs {
+    display: flex;
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 3px;
+    margin-bottom: 24px;
+  }
+  .auth-tab {
+    flex: 1;
+    padding: 8px;
+    text-align: center;
+    font-size: calc(13px * var(--font-scale));
+    font-weight: 600;
+    color: var(--text-muted);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .auth-tab.active { background: var(--surface2); color: var(--text); }
+  .auth-error {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 7px;
+    padding: 10px 14px;
+    font-size: calc(13px * var(--font-scale));
+    color: var(--red);
+    margin-bottom: 16px;
+  }
+  .auth-submit { width: 100%; justify-content: center; padding: 10px; margin-top: 8px; }
+  .sidebar-user {
+    padding: 12px 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .sidebar-user-info { min-width: 0; flex: 1; }
+  .sidebar-user-email {
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sidebar-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .theme-toggle {
+    font-size: calc(16px * var(--font-scale));
+    line-height: 1;
+    padding: 5px 8px;
+  }
+
+  .auth-theme-toggle {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 100;
+  }
+</style>
+<script>
+  (function () {
+    var theme = localStorage.getItem('mintos_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+</script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef, createContext, useContext } = React;
+
+const THEME_KEY = 'mintos_theme';
+const fs = (n) => `calc(${n}px * var(--font-scale))`;
+
+const ThemeContext = createContext(null);
+
+function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || 'dark');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme(t => t === 'dark' ? 'light' : 'dark');
+  }, []);
+
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+function useTheme() {
+  return useContext(ThemeContext);
+}
+
+function ThemeToggle({ className = '' }) {
+  const { theme, toggleTheme } = useTheme();
+  const label = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+  return (
+    <button
+      type="button"
+      className={`btn btn-ghost btn-sm theme-toggle ${className}`.trim()}
+      onClick={toggleTheme}
+      title={label}
+      aria-label={label}
+    >
+      {theme === 'dark' ? '☀️' : '🌙'}
+    </button>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   Auth + API helper
+═══════════════════════════════════════════════ */
+const TOKEN_KEY = 'mintos_token';
+
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function setToken(token) {
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  else localStorage.removeItem(TOKEN_KEY);
+}
+
+const API = {
+  async request(method, path, data) {
+    const headers = {};
+    const token = getToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (data !== undefined) headers['Content-Type'] = 'application/json';
+    const opts = { method, headers };
+    if (data !== undefined) opts.body = JSON.stringify(data);
+    const r = await fetch(`/api${path}`, opts);
+    // #region agent log
+    fetch('http://127.0.0.1:7390/ingest/61be41cc-fa8f-4b3f-bd6a-0db09922597e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdc701'},body:JSON.stringify({sessionId:'cdc701',hypothesisId:'H',location:'index.html:API.request',message:'api response',data:{method,path,status:r.status,hasToken:!!token},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    if (r.status === 401 && !path.startsWith('/auth/')) {
+      setToken(null);
+      window.dispatchEvent(new Event('auth:logout'));
+      throw new Error('Session expired');
+    }
+    if (!r.ok) {
+      let msg = await r.text();
+      try { msg = JSON.parse(msg).detail || msg; } catch {}
+      // #region agent log
+      fetch('http://127.0.0.1:7390/ingest/61be41cc-fa8f-4b3f-bd6a-0db09922597e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdc701'},body:JSON.stringify({sessionId:'cdc701',hypothesisId:'C',location:'index.html:API.request',message:'api error',data:{path,status:r.status,detailType:typeof msg,isArray:Array.isArray(msg)},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      throw new Error(typeof msg === 'string' ? msg : 'Request failed');
+    }
+    return r.json();
+  },
+  get(path) { return this.request('GET', path); },
+  post(path, data) { return this.request('POST', path, data); },
+  put(path, data) { return this.request('PUT', path, data); },
+  delete(path) { return this.request('DELETE', path); },
+};
+
+function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const logout = useCallback(() => {
+    setToken(null);
+    setUser(null);
+  }, []);
+
+  useEffect(() => {
+    const onLogout = () => logout();
+    window.addEventListener('auth:logout', onLogout);
+    return () => window.removeEventListener('auth:logout', onLogout);
+  }, [logout]);
+
+  useEffect(() => {
+    const token = getToken();
+    // #region agent log
+    fetch('http://127.0.0.1:7390/ingest/61be41cc-fa8f-4b3f-bd6a-0db09922597e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdc701'},body:JSON.stringify({sessionId:'cdc701',hypothesisId:'B',location:'index.html:AuthProvider',message:'session restore start',data:{hasToken:!!token},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    if (!token) { setLoading(false); return; }
+    API.get('/auth/me')
+      .then(u => {
+        // #region agent log
+        fetch('http://127.0.0.1:7390/ingest/61be41cc-fa8f-4b3f-bd6a-0db09922597e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdc701'},body:JSON.stringify({sessionId:'cdc701',hypothesisId:'B',location:'index.html:AuthProvider',message:'session restore success',data:{userId:u?.id},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
+        setUser(u);
+      })
+      .catch(() => {
+        // #region agent log
+        fetch('http://127.0.0.1:7390/ingest/61be41cc-fa8f-4b3f-bd6a-0db09922597e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdc701'},body:JSON.stringify({sessionId:'cdc701',hypothesisId:'B',location:'index.html:AuthProvider',message:'session restore failed',data:{},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
+        setToken(null); setUser(null);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const login = useCallback(async (email, password) => {
+    const res = await API.post('/auth/login', { email, password });
+    setToken(res.token);
+    setUser(res.user);
+    return res.user;
+  }, []);
+
+  const register = useCallback(async (email, password, name) => {
+    const res = await API.post('/auth/register', { email, password, name });
+    setToken(res.token);
+    setUser(res.user);
+    return res.user;
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="auth-page">
+        <div className="auth-theme-toggle">
+          <ThemeToggle />
+        </div>
+        <div style={{color:'var(--text-muted)',fontSize:fs(14)}}>Loading…</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage onLogin={login} onRegister={register} />;
+  }
+
+  // #region agent log
+  fetch('http://127.0.0.1:7390/ingest/61be41cc-fa8f-4b3f-bd6a-0db09922597e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cdc701'},body:JSON.stringify({sessionId:'cdc701',hypothesisId:'E',location:'index.html:AuthProvider',message:'rendering app',data:{userId:user?.id,childrenIsFn:typeof children==='function'},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
+  return children({ user, logout });
+}
+
+function LoginPage({ onLogin, onRegister }) {
+  const [mode, setMode] = useState('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
+    try {
+      if (mode === 'login') await onLogin(email, password);
+      else await onRegister(email, password, name);
+    } catch(err) {
+      setError(err.message || 'Something went wrong');
+    }
+    setSubmitting(false);
+  }
+
+  return (
+    <div className="auth-page">
+      <div className="auth-theme-toggle">
+        <ThemeToggle />
+      </div>
+      <div className="auth-card">
+        <div className="auth-logo">
+          <div className="auth-logo-title">Mint<span>OS</span></div>
+          <div className="auth-logo-sub">by ThoughtMint</div>
+        </div>
+        <div className="auth-tabs">
+          <div className={`auth-tab ${mode==='login'?'active':''}`} onClick={()=>{setMode('login');setError('');}}>Sign In</div>
+          <div className={`auth-tab ${mode==='register'?'active':''}`} onClick={()=>{setMode('register');setError('');}}>Sign Up</div>
+        </div>
+        {error && <div className="auth-error">{error}</div>}
+        <form onSubmit={handleSubmit}>
+          {mode === 'register' && (
+            <div className="form-group">
+              <label className="form-label">Name</label>
+              <input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name"/>
+            </div>
+          )}
+          <div className="form-group">
+            <label className="form-label">Email</label>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" required/>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Password</label>
+            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder={mode==='register'?'Min 8 characters':'Your password'} required minLength={mode==='register'?8:1}/>
+          </div>
+          <button className="btn btn-primary auth-submit" type="submit" disabled={submitting}>
+            {submitting ? 'Please wait…' : mode==='login' ? 'Sign In' : 'Create Account'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   Toast
+═══════════════════════════════════════════════ */
+function ToastContainer({ toasts }) {
+  return (
+    <div className="toast-container">
+      {toasts.map(t => (
+        <div key={t.id} className={`toast ${t.type}`}>
+          <span>{t.type==='success'?'✓':t.type==='error'?'✕':'ℹ'}</span>
+          {t.msg}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   CRM Module
+═══════════════════════════════════════════════ */
+const STAGES = ['New','Qualified','Proposal','Won','Lost'];
+const SOURCES = ['Website','Social Media','Email Outreach','Referral','Manual','Gojiberry','Other'];
+
+function stageBadge(s) {
+  const map = {New:'badge-new',Qualified:'badge-qualified',Proposal:'badge-proposal',Won:'badge-won',Lost:'badge-lost'};
+  return map[s] || 'badge-new';
+}
+
+function CRMModule({ showToast }) {
+  const [leads, setLeads] = useState([]);
+  const [view, setView] = useState('table');
+  const [search, setSearch] = useState('');
+  const [stageFilter, setStageFilter] = useState('All');
+  const [modal, setModal] = useState(null); // null | 'add' | lead object
+  const [importModal, setImportModal] = useState(false);
+  const fileRef = useRef();
+
+  useEffect(() => { loadLeads(); }, []);
+
+  async function loadLeads() {
+    try { setLeads(await API.get('/leads')); }
+    catch(e) { showToast('Failed to load leads','error'); }
+  }
+
+  const filtered = leads.filter(l => {
+    const q = search.toLowerCase();
+    const matchQ = !q || [l.name,l.company,l.email].join(' ').toLowerCase().includes(q);
+    const matchS = stageFilter==='All' || l.stage===stageFilter;
+    return matchQ && matchS;
+  });
+
+  async function saveLead(form) {
+    try {
+      if (form.id) { await API.put(`/leads/${form.id}`, form); showToast('Lead updated','success'); }
+      else { await API.post('/leads', form); showToast('Lead added','success'); }
+      await loadLeads(); setModal(null);
+    } catch(e) { showToast('Save failed','error'); }
+  }
+
+  async function deleteLead(id) {
+    if (!confirm('Delete this lead?')) return;
+    try { await API.delete(`/leads/${id}`); showToast('Deleted','success'); await loadLeads(); }
+    catch(e) { showToast('Delete failed','error'); }
+  }
+
+  async function exportJSON() {
+    const blob = new Blob([JSON.stringify(leads, null, 2)], {type:'application/json'});
+    const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='leads.json'; a.click();
+  }
+
+  async function exportCSV() {
+    const headers = ['id','name','email','company','role','stage','source','notes'];
+    const rows = leads.map(l => headers.map(h => `"${(l[h]||'').toString().replace(/"/g,'""')}"`).join(','));
+    const blob = new Blob([[headers.join(','),...rows].join('\n')], {type:'text/csv'});
+    const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='leads.csv'; a.click();
+  }
+
+  function handleFileImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        let imported = [];
+        if (file.name.endsWith('.json')) {
+          imported = JSON.parse(ev.target.result);
+        } else if (file.name.endsWith('.csv')) {
+          const lines = ev.target.result.split('\n').filter(Boolean);
+          const headers = lines[0].split(',').map(h => h.replace(/"/g,'').trim().toLowerCase());
+          const gojiberryMap = {
+            'first name':'__first', 'last name':'__last',
+            'email address':'email', 'email':'email',
+            'company':'company', 'organization':'company',
+            'job title':'role', 'title':'role',
+            'phone':'phone', 'source':'source',
+            'status':'stage', 'notes':'notes', 'intent':'notes',
+          };
+          const rows = lines.slice(1).map(line => {
+            const vals = []; let cur='', inQ=false;
+            for (let ch of line) {
+              if (ch==='"') inQ=!inQ;
+              else if (ch===',' && !inQ) { vals.push(cur.replace(/<[^>]*>/g,'').trim()); cur=''; }
+              else cur+=ch;
+            }
+            vals.push(cur.replace(/<[^>]*>/g,'').trim());
+            const obj = {};
+            headers.forEach((h,i) => {
+              const mapped = gojiberryMap[h] || h;
+              obj[mapped] = (vals[i]||'').replace(/^"|"$/g,'');
+            });
+            if (obj.__first || obj.__last) {
+              obj.name = [obj.__first, obj.__last].filter(Boolean).join(' ').trim();
+              delete obj.__first; delete obj.__last;
+            }
+            return obj;
+          });
+          imported = rows;
+        }
+        if (!Array.isArray(imported)) throw new Error('Not an array');
+        let added=0;
+        for (const l of imported) {
+          if (!l.name && !l.email) continue;
+          await API.post('/leads', {
+            name: l.name||l.Name||'',
+            email: l.email||l.Email||'',
+            company: l.company||l.Company||'',
+            role: l.role||l.Role||l.title||'',
+            stage: l.stage||l.Stage||'New',
+            source: l.source||l.Source||'Manual',
+            notes: l.notes||l.Notes||'',
+          });
+          added++;
+        }
+        await loadLeads();
+        setImportModal(false);
+        showToast(`Imported ${added} leads`, 'success');
+      } catch(err) { showToast('Import failed: '+err.message, 'error'); }
+    };
+    reader.readAsText(file);
+  }
+
+  const stageCounts = STAGES.reduce((a,s) => ({...a, [s]: leads.filter(l=>l.stage===s).length}), {});
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}}>
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <div className="page-title">CRM</div>
+          <div className="page-subtitle">{leads.length} leads total</div>
+        </div>
+        <div style={{display:'flex',gap:8}}>
+          <button className="btn btn-secondary btn-sm" onClick={()=>setImportModal(true)}>⬆ Import</button>
+          <button className="btn btn-secondary btn-sm" onClick={exportCSV}>⬇ CSV</button>
+          <button className="btn btn-secondary btn-sm" onClick={exportJSON}>⬇ JSON</button>
+          <button className="btn btn-primary btn-sm" onClick={()=>setModal({})}>+ Add Lead</button>
+        </div>
+      </div>
+
+      {/* Scrollable body */}
+      <div className="crm-wrap">
+        {/* Stats */}
+        <div className="stats-row">
+          {STAGES.map(s => (
+            <div className="stat-card" key={s} style={{cursor:'pointer'}} onClick={()=>setStageFilter(s===stageFilter?'All':s)}>
+              <div className="stat-value" style={s==='Won'?{color:'var(--green)'}:s==='Lost'?{color:'var(--red)'}:{}}>{stageCounts[s]||0}</div>
+              <div className="stat-label">{s}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Toolbar */}
+        <div className="crm-toolbar">
+          <input className="search-box" placeholder="Search leads…" value={search} onChange={e=>setSearch(e.target.value)}/>
+          <select value={stageFilter} onChange={e=>setStageFilter(e.target.value)} style={{width:'auto'}}>
+            <option value="All">All Stages</option>
+            {STAGES.map(s=><option key={s}>{s}</option>)}
+          </select>
+          <div className="view-tabs">
+            <div className={`view-tab ${view==='table'?'active':''}`} onClick={()=>setView('table')}>Table</div>
+            <div className={`view-tab ${view==='kanban'?'active':''}`} onClick={()=>setView('kanban')}>Kanban</div>
+          </div>
+        </div>
+
+        {view==='table' ? (
+          <div className="card" style={{overflow:'hidden'}}>
+            <table className="leads-table">
+              <thead>
+                <tr>
+                  <th>Name</th><th>Company</th><th>Role</th>
+                  <th>Stage</th><th>Source</th><th>Email</th><th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length===0 && (
+                  <tr><td colSpan={7} className="empty-state">No leads found</td></tr>
+                )}
+                {filtered.map(l=>(
+                  <tr key={l.id}>
+                    <td style={{fontWeight:600}}>{l.name}</td>
+                    <td style={{color:'var(--text-muted)'}}>{l.company||'—'}</td>
+                    <td style={{color:'var(--text-muted)'}}>{l.role||'—'}</td>
+                    <td><span className={`badge ${stageBadge(l.stage)}`}>{l.stage}</span></td>
+                    <td style={{color:'var(--text-muted)',fontSize:fs(12)}}>{l.source}</td>
+                    <td style={{color:'var(--text-muted)',fontSize:fs(12)}}>{l.email}</td>
+                    <td>
+                      <div className="actions">
+                        <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>setModal(l)}>✎</button>
+                        <button className="btn btn-danger btn-icon btn-sm" onClick={()=>deleteLead(l.id)}>✕</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="kanban-wrap">
+            {STAGES.map(stage=>{
+              const cols = filtered.filter(l=>l.stage===stage);
+              return (
+                <div className="kanban-col" key={stage}>
+                  <div className="kanban-col-header">
+                    <span className={`badge ${stageBadge(stage)}`}>{stage}</span>
+                    <span className="kanban-count">{cols.length}</span>
+                  </div>
+                  <div className="kanban-cards">
+                    {cols.map(l=>(
+                      <div className="kanban-card" key={l.id} onClick={()=>setModal(l)}>
+                        <div className="kanban-card-name">{l.name}</div>
+                        <div className="kanban-card-company">{l.company||l.role||'—'}</div>
+                        <div className="kanban-card-meta">
+                          <span style={{fontSize:fs(11),color:'var(--text-muted)'}}>{l.source}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {cols.length===0 && <div style={{padding:'8px 0',textAlign:'center',fontSize:fs(12),color:'var(--text-muted)'}}>Empty</div>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Lead modal */}
+      {modal!==null && <LeadModal lead={modal} onSave={saveLead} onClose={()=>setModal(null)}/>}
+
+      {/* Import modal */}
+      {importModal && (
+        <div className="modal-overlay" onClick={()=>setImportModal(false)}>
+          <div className="modal import-modal" onClick={e=>e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title">Import Leads</div>
+              <button className="btn btn-ghost btn-icon" onClick={()=>setImportModal(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="file-drop" onClick={()=>fileRef.current.click()}>
+                <div style={{fontSize:fs(28),marginBottom:8}}>📂</div>
+                <div style={{fontWeight:600,marginBottom:4}}>Click to select file</div>
+                <div style={{fontSize:fs(12),color:'var(--text-muted)'}}>Supports .csv (including Gojiberry export) and .json</div>
+              </div>
+              <input ref={fileRef} type="file" accept=".json,.csv,application/json,text/csv" style={{display:'none'}} onChange={handleFileImport}/>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LeadModal({ lead, onSave, onClose }) {
+  const [form, setForm] = useState({
+    name:'', email:'', company:'', role:'', stage:'New', source:'Manual', notes:'', ...lead
+  });
+  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="modal-header">
+          <div className="modal-title">{form.id?'Edit Lead':'Add Lead'}</div>
+          <button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Name *</label>
+              <input value={form.name} onChange={e=>set('name',e.target.value)} placeholder="Full name"/>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Email</label>
+              <input value={form.email} onChange={e=>set('email',e.target.value)} placeholder="email@example.com"/>
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Company</label>
+              <input value={form.company} onChange={e=>set('company',e.target.value)} placeholder="Company name"/>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Role</label>
+              <input value={form.role} onChange={e=>set('role',e.target.value)} placeholder="Job title"/>
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Stage</label>
+              <select value={form.stage} onChange={e=>set('stage',e.target.value)}>
+                {STAGES.map(s=><option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Source</label>
+              <select value={form.source} onChange={e=>set('source',e.target.value)}>
+                {SOURCES.map(s=><option key={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Notes</label>
+            <textarea rows={3} value={form.notes} onChange={e=>set('notes',e.target.value)} placeholder="Any context…"/>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={()=>onSave(form)} disabled={!form.name.trim()}>
+            {form.id?'Save Changes':'Add Lead'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   Brain Module
+═══════════════════════════════════════════════ */
+const BRAIN_FILES = [
+  { key:'context',     name:'context.md',     desc:'About ThoughtMint' },
+  { key:'icp',         name:'icp.md',          desc:'Ideal Customer Profile' },
+  { key:'pain_points', name:'pain_points.md',  desc:'Pain Points & Keywords' },
+  { key:'voice',       name:'voice.md',        desc:'Voice & DM Style' },
+  { key:'learnings',   name:'learnings.md',    desc:'Outreach Learnings' },
+];
+
+function BrainModule({ showToast }) {
+  const [active, setActive] = useState('context');
+  const [contents, setContents] = useState({});
+  const [dirty, setDirty] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { loadAll(); }, []);
+
+  async function loadAll() {
+    try {
+      const data = await API.get('/brain');
+      setContents(data);
+    } catch(e) { showToast('Failed to load brain files','error'); }
+  }
+
+  function handleChange(val) {
+    setContents(c=>({...c,[active]:val}));
+    setDirty(d=>({...d,[active]:true}));
+  }
+
+  async function saveFile() {
+    setSaving(true);
+    try {
+      await API.put(`/brain/${active}.md`, { content: contents[active]||'' });
+      setDirty(d=>({...d,[active]:false}));
+      showToast('Saved','success');
+    } catch(e) { showToast('Save failed','error'); }
+    setSaving(false);
+  }
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}}>
+      <div className="page-header">
+        <div>
+          <div className="page-title">Brain Files</div>
+          <div className="page-subtitle">Knowledge base for LLM context</div>
+        </div>
+      </div>
+      <div className="brain-layout">
+        <div className="brain-sidebar">
+          {BRAIN_FILES.map(f=>(
+            <div key={f.key} className={`brain-file-item ${active===f.key?'active':''}`} onClick={()=>setActive(f.key)}>
+              <div className="brain-file-name">{f.name}{dirty[f.key]?' •':''}</div>
+              <div className="brain-file-desc">{f.desc}</div>
+            </div>
+          ))}
+        </div>
+        <div className="brain-editor-area">
+          <div className="brain-editor-toolbar">
+            <span style={{fontWeight:600,fontSize:fs(13)}}>{BRAIN_FILES.find(f=>f.key===active)?.name}</span>
+            <button className="btn btn-primary btn-sm" onClick={saveFile} disabled={saving||!dirty[active]}>
+              {saving?'Saving…':'Save'}
+            </button>
+          </div>
+          <textarea
+            className="brain-textarea"
+            value={contents[active]||''}
+            onChange={e=>handleChange(e.target.value)}
+            placeholder="Start writing…"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   Settings Module
+═══════════════════════════════════════════════ */
+function SettingsModule({ showToast }) {
+  const [settings, setSettings] = useState({});
+  const [saving, setSaving] = useState(false);
+  const set = (k,v) => setSettings(s=>({...s,[k]:v}));
+
+  useEffect(() => {
+    API.get('/settings').then(setSettings).catch(()=>showToast('Failed to load settings','error'));
+  }, []);
+
+  async function save() {
+    setSaving(true);
+    try {
+      await API.put('/settings', settings);
+      showToast('Settings saved','success');
+    } catch(e) { showToast('Save failed','error'); }
+    setSaving(false);
+  }
+
+  const inp = (key, label, type='text', placeholder='', hint='') => (
+    <div className="form-group">
+      <label className="form-label">{label}</label>
+      <input type={type} value={settings[key]||''} onChange={e=>set(key,e.target.value)} placeholder={placeholder}/>
+      {hint && <div className="settings-hint">{hint}</div>}
+    </div>
+  );
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}}>
+      <div className="page-header">
+        <div>
+          <div className="page-title">Settings</div>
+          <div className="page-subtitle">LLM and Reddit API configuration</div>
+        </div>
+        <button className="btn btn-primary" onClick={save} disabled={saving}>{saving?'Saving…':'Save Settings'}</button>
+      </div>
+      <div className="settings-wrap">
+        {/* LLM */}
+        <div className="settings-section">
+          <div className="settings-section-title">LLM Provider</div>
+          <div className="form-group">
+            <label className="form-label">Provider</label>
+            <select value={settings.llm_provider||'claude'} onChange={e=>set('llm_provider',e.target.value)}>
+              <option value="claude">Claude (Anthropic)</option>
+              <option value="openai">OpenAI</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="groq">Groq</option>
+            </select>
+          </div>
+          <div className="settings-row">
+            {inp('llm_api_key','API Key','password','sk-…','Your LLM API key')}
+            {inp('llm_model','Model (optional)','text','claude-sonnet-4-6','Leave blank for default')}
+          </div>
+        </div>
+
+        {/* Reddit */}
+        <div className="settings-section">
+          <div className="settings-section-title">Reddit API</div>
+          <div className="settings-row">
+            {inp('reddit_client_id','Client ID','text','Paste from Reddit App')}
+            {inp('reddit_client_secret','Client Secret','password','Paste from Reddit App')}
+          </div>
+          <div className="settings-row">
+            {inp('reddit_username','Reddit Username','text','your_username')}
+            {inp('reddit_password','Reddit Password','password','Your Reddit password','Create one via Reddit Preferences → Password/Email if you use Google login')}
+          </div>
+          {inp('reddit_user_agent','User Agent','text','MintOS/1.0 by u/your_username')}
+        </div>
+
+        {/* Scanning */}
+        <div className="settings-section">
+          <div className="settings-section-title">Scan Settings</div>
+          <div className="settings-row">
+            {inp('reddit_subreddits','Subreddits to scan','text','linkedin,personalbranding,entrepreneur','Comma-separated, no r/')}
+            {inp('reddit_min_score','Min Post Score','number','1','Filter posts below this upvote score')}
+          </div>
+          {inp('reddit_post_limit','Posts per subreddit','number','25','How many recent posts to scan per subreddit')}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   Reddit Module — two-panel layout
+═══════════════════════════════════════════════ */
+const QUEUE_TABS = ['All','New','Generated','Sent','Skipped'];
+
+function relevancePill(score) {
+  const n = parseFloat(score)||0;
+  if (n>=7) return <span className="relevance-pill relevance-high">{n.toFixed(1)}</span>;
+  if (n>=4) return <span className="relevance-pill relevance-mid">{n.toFixed(1)}</span>;
+  return <span className="relevance-pill relevance-low">{n.toFixed(1)}</span>;
+}
+
+function statusClass(s) {
+  return {new:'status-new',generated:'status-generated',sent:'status-sent',skipped:'status-skipped'}[s]||'status-new';
+}
+
+function RedditModule({ showToast, onNavigate }) {
+  const [items, setItems]         = useState([]);
+  const [selected, setSelected]   = useState(null);
+  const [tab, setTab]             = useState('All');
+  const [scanning, setScanning]   = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [settings, setSettings]   = useState(null);
+  const [stats, setStats]         = useState({});
+  const dmRef = useRef(null);
+
+  useEffect(() => { loadAll(); }, []);
+
+  async function loadAll() {
+    try {
+      const [its, cfg, st] = await Promise.all([
+        API.get('/reddit'),
+        API.get('/settings'),
+        API.get('/reddit/stats'),
+      ]);
+      setItems(its);
+      setSettings(cfg);
+      setStats(st);
+      if (selected) {
+        const fresh = its.find(i=>i.id===selected.id);
+        if (fresh) setSelected(fresh);
+      }
+    } catch(e) { showToast('Failed to load Reddit queue','error'); }
+  }
+
+  const missingReddit = !settings?.reddit_client_id || !settings?.reddit_username;
+  const missingLLM    = !settings?.llm_api_key;
+
+  const filtered = items.filter(i => tab==='All' || i.status===tab.toLowerCase());
+
+  async function startScan() {
+    if (missingReddit) { showToast('Configure Reddit API in Settings first','error'); return; }
+    setScanning(true);
+    try {
+      await API.post('/reddit/scan', {});
+      showToast('Scan started — queue will update shortly','info');
+      setTimeout(() => { loadAll(); setScanning(false); }, 4000);
+    } catch(e) {
+      showToast('Scan failed: '+e.message,'error');
+      setScanning(false);
+    }
+  }
+
+  async function generateDM(item) {
+    if (missingLLM) { showToast('Configure LLM API key in Settings first','error'); return; }
+    setGenerating(true);
+    try {
+      const updated = await API.post(`/reddit/${item.id}/generate`, {});
+      setItems(prev => prev.map(i=>i.id===item.id?updated:i));
+      setSelected(updated);
+      showToast('DM generated','success');
+    } catch(e) { showToast('Generation failed: '+e.message,'error'); }
+    setGenerating(false);
+  }
+
+  async function updateItem(id, data) {
+    try {
+      const updated = await API.put(`/reddit/${id}`, data);
+      setItems(prev=>prev.map(i=>i.id===id?updated:i));
+      setSelected(updated);
+    } catch(e) { showToast('Update failed','error'); }
+  }
+
+  async function deleteItem(id) {
+    if (!confirm('Remove this post from the queue?')) return;
+    try {
+      await API.delete(`/reddit/${id}`);
+      setItems(prev=>prev.filter(i=>i.id!==id));
+      if (selected?.id===id) setSelected(null);
+      showToast('Removed','success');
+    } catch(e) { showToast('Delete failed','error'); }
+  }
+
+  async function markSent(item) {
+    await updateItem(item.id, { status:'sent' });
+    showToast('Marked as sent ✓','success');
+  }
+
+  async function markSkipped(item) {
+    await updateItem(item.id, { status:'skipped' });
+    if (selected?.id===item.id) setSelected(null);
+  }
+
+  function copyDM() {
+    const text = selected?.dmDraft || '';
+    if (!text) { showToast('No DM to copy','error'); return; }
+    navigator.clipboard.writeText(text).then(()=>showToast('DM copied to clipboard','success'));
+  }
+
+  async function saveDMBlur() {
+    if (!selected) return;
+    const val = dmRef.current?.value;
+    if (val !== undefined && val !== selected.dmDraft) {
+      await updateItem(selected.id, { dm_draft: val });
+    }
+  }
+
+  return (
+    <div className="reddit-module">
+      {/* ─── Left panel: queue ─── */}
+      <div className="reddit-queue">
+        <div className="reddit-queue-header">
+          {/* Config warnings */}
+          {missingReddit && (
+            <div className="config-warning" onClick={()=>onNavigate&&onNavigate('settings')}>
+              ⚠ Reddit API not configured → Settings
+            </div>
+          )}
+          {missingLLM && (
+            <div className="config-warning" onClick={()=>onNavigate&&onNavigate('settings')}>
+              ⚠ LLM API key missing → Settings
+            </div>
+          )}
+          <div style={{height: (missingReddit||missingLLM)?8:0}}/>
+
+          {/* Scan row */}
+          <div className="reddit-scan-row">
+            <button className="btn-scan" onClick={startScan} disabled={scanning}>
+              {scanning ? <>
+                <span className="scan-status-dot scanning"/>
+                Scanning…
+              </> : <>
+                🔍 Scan Reddit
+              </>}
+            </button>
+            {!scanning && items.length>0 && (
+              <span className="scan-status-dot" title="Queue loaded"/>
+            )}
+          </div>
+
+          {/* Stats mini-row */}
+          {Object.keys(stats).length>0 && (
+            <div style={{display:'flex',gap:10,fontSize:fs(11),color:'var(--text-muted)',marginBottom:8}}>
+              <span>📥 {stats.total||0} total</span>
+              <span>🔵 {stats.new||0} new</span>
+              <span>✉ {stats.generated||0} ready</span>
+              <span>✅ {stats.sent||0} sent</span>
+            </div>
+          )}
+
+          {/* Tabs */}
+          <div className="queue-tabs">
+            {QUEUE_TABS.map(t=>(
+              <div key={t} className={`queue-tab ${tab===t?'active':''}`} onClick={()=>setTab(t)}>{t}</div>
+            ))}
+          </div>
+        </div>
+
+        {/* Post list */}
+        <div className="reddit-post-list">
+          {filtered.length===0 && (
+            <div className="empty-state" style={{padding:'40px 16px'}}>
+              <div className="empty-state-icon">📭</div>
+              <div>{tab==='All'?'Scan Reddit to find posts':'No posts in this category'}</div>
+            </div>
+          )}
+          {filtered.map(item=>(
+            <div
+              key={item.id}
+              className={`reddit-post-card ${selected?.id===item.id?'selected':''}`}
+              onClick={()=>setSelected(item)}
+            >
+              <div className="post-card-top">
+                <div className="post-card-title">{item.postTitle}</div>
+                {item.relevanceScore!=null && relevancePill(item.relevanceScore)}
+              </div>
+              <div className="post-card-meta">
+                <span className="post-card-sub">r/{item.subreddit}</span>
+                <span>·</span>
+                <span>↑{item.postScore}</span>
+                <span className={`post-card-status ${statusClass(item.status)}`}>{item.status}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── Right panel: workspace ─── */}
+      <div className="reddit-workspace">
+        {!selected ? (
+          <div className="workspace-empty">
+            <div className="workspace-empty-icon">👈</div>
+            <div className="workspace-empty-text">Select a post to view details & draft a DM</div>
+          </div>
+        ) : (
+          <>
+            <div className="workspace-content">
+              {/* Post details */}
+              <div className="post-detail-header">
+                <div className="post-detail-title">{selected.postTitle}</div>
+                <div className="post-detail-meta">
+                  <span>r/{selected.subreddit}</span>
+                  <span>u/{selected.author}</span>
+                  <span>↑ {selected.postScore} upvotes</span>
+                  {selected.relevanceScore!=null && (
+                    <span>Relevance: {relevancePill(selected.relevanceScore)}</span>
+                  )}
+                  <a href={selected.postUrl} target="_blank" rel="noreferrer">View post ↗</a>
+                </div>
+              </div>
+
+              {/* Post body */}
+              {selected.postBody && (
+                <div className="post-body-preview">{selected.postBody}</div>
+              )}
+
+              {/* Relevance reason */}
+              {selected.relevanceReason && (
+                <div className="dm-reason">💡 {selected.relevanceReason}</div>
+              )}
+
+              {/* DM section */}
+              <div className="dm-section">
+                <div className="dm-section-header">
+                  <span className="dm-section-label">DM Draft</span>
+                  {selected.status==='generated' && (
+                    <span style={{fontSize:fs(11),color:'var(--green)'}}>✓ Ready to copy</span>
+                  )}
+                </div>
+                {selected.dmDraft ? (
+                  <textarea
+                    ref={dmRef}
+                    className="dm-textarea"
+                    defaultValue={selected.dmDraft}
+                    onBlur={saveDMBlur}
+                    placeholder="DM will appear here after generation…"
+                  />
+                ) : (
+                  <div style={{
+                    background:'var(--surface)', border:'1px dashed var(--border)',
+                    borderRadius:8, padding:'24px', textAlign:'center',
+                    color:'var(--text-muted)', fontSize:fs(13)
+                  }}>
+                    No DM yet — click <strong>Generate DM</strong> below
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Action bar */}
+            <div className="workspace-actions">
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={()=>markSkipped(selected)}
+                disabled={selected.status==='skipped'}
+              >
+                Skip
+              </button>
+              <button className="btn btn-danger btn-sm" onClick={()=>deleteItem(selected.id)}>
+                Remove
+              </button>
+              <div className="spacer"/>
+              <button
+                className="btn btn-secondary"
+                onClick={()=>generateDM(selected)}
+                disabled={generating}
+              >
+                {generating?'Generating…':'⚡ Generate DM'}
+              </button>
+              {selected.dmDraft && (
+                <>
+                  <button className="btn btn-secondary" onClick={copyDM}>
+                    📋 Copy DM
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    onClick={()=>markSent(selected)}
+                    disabled={selected.status==='sent'}
+                  >
+                    {selected.status==='sent'?'✓ Sent':'Mark as Sent'}
+                  </button>
+                </>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   App
+═══════════════════════════════════════════════ */
+const NAV = [
+  { id:'crm',      label:'CRM',      icon:'👥' },
+  { id:'reddit',   label:'Reddit',   icon:'🟠' },
+  { id:'brain',    label:'Brain',    icon:'🧠' },
+  { id:'settings', label:'Settings', icon:'⚙️' },
+];
+
+function App() {
+  const [module, setModule]   = useState('crm');
+  const [toasts, setToasts]   = useState([]);
+
+  const showToast = useCallback((msg, type='info') => {
+    const id = Date.now() + Math.random();
+    setToasts(t=>[...t, {id,msg,type}]);
+    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)), 3500);
+  }, []);
+
+  return (
+    <AuthProvider>
+      {({ user, logout }) => (
+        <div className="app">
+          {/* Sidebar */}
+          <div className="sidebar">
+            <div className="sidebar-logo">
+              <div className="sidebar-logo-title">Mint<span>OS</span></div>
+              <div className="sidebar-logo-sub">by ThoughtMint</div>
+            </div>
+            <div className="sidebar-nav">
+              <div className="nav-section-label">Modules</div>
+              {NAV.map(n=>(
+                <div
+                  key={n.id}
+                  className={`nav-item ${module===n.id?'active':''}`}
+                  onClick={()=>setModule(n.id)}
+                >
+                  <span className="nav-icon">{n.icon}</span>
+                  {n.label}
+                </div>
+              ))}
+            </div>
+            <div className="sidebar-user">
+              <div className="sidebar-user-info">
+                <div style={{fontSize:fs(12),fontWeight:600}}>{user.name || 'User'}</div>
+                <div className="sidebar-user-email">{user.email}</div>
+              </div>
+              <div className="sidebar-actions">
+                <ThemeToggle />
+                <button className="btn btn-ghost btn-sm" onClick={logout} title="Sign out">↩</button>
+              </div>
+            </div>
+            <div className="sidebar-footer">
+              MintOS v0.1
+            </div>
+          </div>
+
+          {/* Main — overflow:hidden, each module handles its own scroll */}
+          <div className="main">
+            {module==='crm'      && <CRMModule      showToast={showToast}/>}
+            {module==='reddit'   && <RedditModule   showToast={showToast} onNavigate={setModule}/>}
+            {module==='brain'    && <BrainModule    showToast={showToast}/>}
+            {module==='settings' && <SettingsModule showToast={showToast}/>}
+          </div>
+
+          <ToastContainer toasts={toasts}/>
+        </div>
+      )}
+    </AuthProvider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <ThemeProvider>
+    <App/>
+  </ThemeProvider>
+);
+</script>
+</body>
+</html>
