@@ -2,6 +2,16 @@
 
 > Your local-first, AI-powered CRM for monitoring Reddit leads, qualifying prospects, and managing outreach. Built for solopreneurs and creators who want to grow without paying for bloated SaaS tools.
 
+---
+
+### 🎬 Watch the Demo
+
+[![MintOS Demo Video](https://img.youtube.com/vi/3rAxyauXxIQ/maxresdefault.jpg)](https://www.youtube.com/watch?v=3rAxyauXxIQ)
+
+**[▶️ Watch on YouTube](https://www.youtube.com/watch?v=3rAxyauXxIQ)** — See MintOS in action
+
+---
+
 ## Why MintOS?
 
 - **100% Local** — Your data stays on your machine. No cloud lock-in.
