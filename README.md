@@ -81,7 +81,6 @@ MintOS is built by the team behind **[ThoughtMint](https://thoughtmint.ai)** —
 
 ### 🔗 Our Ecosystem
 
-- 🎬 **YouTube:** [ThoughtMint](https://youtube.com/@ThoughtMint) — AI tutorials & personal branding
 - 🌐 **ThoughtMint:** [thoughtmint.ai](https://thoughtmint.ai) — LinkedIn Personal Branding OS
 - 🤝 **World Wide Collab:** [worldwidecollab.co](https://worldwidecollab.co) — global builder community
 - 🚀 **Visibility Ventures:** [visibilityventures.co](https://visibilityventures.co) — personal brand growth
